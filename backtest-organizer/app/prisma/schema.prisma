@@ -1,0 +1,80 @@
+// Schema para Sistema de Organização de Backtests
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/backtest-organizer/app/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Backtest {
+  id           String   @id @default(cuid())
+  titulo       String
+  data         DateTime
+  observacoes  String?
+  posicao      Int      @default(0) // Para ordenação manual
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  
+  // Relacionamentos
+  imagens      BacktestImagem[]
+  tags         BacktestTag[]
+  
+  @@map("backtests")
+}
+
+model Tag {
+  id           String   @id @default(cuid())
+  nome         String   @unique
+  cor          String   // #DC2626, #2563EB, #FBBF24, #16A34A
+  posicao      Int      @default(0) // Para ordenação/priorização manual
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  
+  // Relacionamentos
+  backtests    BacktestTag[]
+  
+  @@map("tags")
+}
+
+model Template {
+  id           String   @id @default(cuid())
+  titulo       String
+  conteudo     String
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  
+  @@map("templates")
+}
+
+model BacktestImagem {
+  id         String   @id @default(cuid())
+  backtestId String
+  nomeArquivo String
+  urlImagem  String
+  posicao    Int      @default(0) // Para ordenação das imagens
+  criadoEm   DateTime @default(now())
+  
+  // Relacionamentos
+  backtest   Backtest @relation(fields: [backtestId], references: [id], onDelete: Cascade)
+  
+  @@map("backtest_imagens")
+}
+
+model BacktestTag {
+  id           String   @id @default(cuid())
+  backtestId   String
+  tagId        String
+  observacao   String?  // Observação específica desta tag neste backtest
+  criadoEm     DateTime @default(now())
+  
+  // Relacionamentos
+  backtest     Backtest @relation(fields: [backtestId], references: [id], onDelete: Cascade)
+  tag          Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@unique([backtestId, tagId])
+  @@map("backtest_tags")
+}
